@@ -1,0 +1,33 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: test
+      id: test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: test
+        setup-command: sudo apt-get update && sudo apt-get install -y g++ libgtest-dev
+          cmake && cd /usr/src/googletest && sudo cmake . && sudo make && sudo cp
+          *.a /usr/lib
+        command: g++ -std=c++17 tests/test_main.cpp -Iinclude -lgtest -lgtest_main
+          -pthread -o tests/test.run && ./tests/test.run
+        timeout: 10
+        max-score: 1000
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        TEST_RESULTS: "${{steps.test.outputs.result}}"
+      with:
+        runners: test
